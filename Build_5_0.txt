@@ -1,0 +1,902 @@
+
+/*SQL Group Project Build 5.0*/
+drop table UsersPlaylist;
+drop table SongsInPlaylist;
+drop table AppleSongGenre;
+drop table SongUsers;
+drop table ArtistSongs;
+drop table radiousers;
+drop table video;
+drop table apple_song;
+drop table payment;
+drop table album;
+drop table artist;
+drop table users;
+drop table radio;
+drop table apple_playlist;
+drop table Genre;
+drop table Individuals;
+
+
+
+
+/*Root Tables (Level 0)*/
+/*1-Individuals*/
+
+
+
+
+Create Table Individuals(
+IndividualID char(8) Constraint IndividualID_PK Primary Key,
+UserName varchar2(30) Constraint UserName_NN not null,
+Password varchar2(30) Constraint Password_NN not null,
+Email varchar2(40) Constraint Email_NN not null unique);
+
+
+
+
+/*2-Genre*/
+
+
+
+
+Create Table Genre(
+GenreID char(4) constraint Genre_GenreID_pk primary key,
+GenreName varchar2(20) not null);
+
+
+
+
+/*3-Apple_Playlist*/
+
+
+
+
+create table Apple_playlist(
+PlaylistID char(8) constraint Playlist_PlaylistID_pk primary key,
+PlaylistName varchar2(30) not null,
+PlaylistReleaseDate date not null);
+
+
+
+
+/*4-Radio*/
+/*drop table radio;*/
+Create Table Radio(
+RadioID char(4) Constraint RadioID_PK Primary Key,
+RadioStationName varchar2(30) Constraint RadioStationName_NN not null,
+RadioStationFrequency number(7, 3) Constraint RadioStationFrequency_NN not null);
+
+
+
+
+/*Subtypes of Individuals*/
+/*5-Users*/
+/*drop table users;*/
+Create Table Users(
+UserAppleID char(8) Constraint UserAppleID_PK Primary Key,
+Constraint Users_AppleID_FK Foreign Key(UserAppleID) References Individuals(IndividualID)
+);
+
+
+
+
+/*6-Artist*/
+/*drop table artist;*/
+Create Table Artist(
+ArtistID char(8) Constraint ArtistID_PK Primary Key,
+ArtistFirstName varchar2(30) Constraint ArtistFirstName_NN not null,
+ArtistLastName varchar2(30) Constraint ArtistLastName_NN not null,
+ArtistGenre varchar2(9) Constraint ArtistGenre_NN not null,/*fk from genre needs a relation(I would delete this attribute out of laziness so we dont need a relashionship :))*/
+ReleaseDate date,
+Constraint Artist_IndividualID Foreign Key(ArtistID) references Individuals(IndividualID)
+);
+
+
+
+
+/*Childs Tables (Level 1)*/
+/*7-Albums*/
+/*drop table album;*/
+Create Table Album(
+AlbumsID char(8) Constraint AlbumsID_PK Primary Key,
+AlbumName varchar2(30) Constraint AlbumName_NN not null,
+AlbumReleaseDate date,
+TopAlbum Varchar2 (30) Constraint TopAlbum_NN not null,
+ArtistID char(8), Constraint Album_ArtistID_FK Foreign Key(ArtistID) references Artist(ArtistID),
+constraint TopAlbumCK check (TopAlbum in ('yes', 'no','Yes','No'))
+);
+
+
+
+
+/*8-Payments*/
+
+
+
+
+create table Payment(
+PaymentID char(8) constraint Payment_PaymentID_pk primary key,
+PaymentAmount number (6,3) not null,
+PaymentType varchar2(20) default 'credit' not null,
+PaymentTerms varchar2(30) not null,
+LatePaymentFee  number(3,2) default 0 not null,
+PaymentDate date,
+PaymentInfo varchar2(20) not null,
+IndividualID char(8),
+constraint Payment_IndividualID_FK Foreign Key(IndividualID) references Individuals(IndividualID)
+);
+
+
+
+
+/*Child Tables (Level 2)*/
+/*9-Apple_Song*/
+
+
+
+
+Create Table Apple_Song(
+SongID char(8) constraint Song_SongID_pk primary key,
+SongDuration time not null,
+SongName varchar2(20) not null,
+TrendingSong varchar2(3) not null,
+AlbumsID char(8),
+constraint song_TrendingSong check (TrendingSong in ('yes', 'no', 'Yes','No')),
+constraint Apple_Song_AlbumsID_FK foreign key(AlbumsID) references Album(AlbumsID)
+);
+
+
+
+
+/*Child Tables (Level 3)*/
+/*10-Video*/
+
+
+
+
+create table Video (
+VideoID char(8) constraint Video_VideoID_pk primary key,
+VideoResolution varchar2(5) not null,
+VideoDuration time not null,
+VideoViews number(12) not null,
+SongID char(8),
+constraint video_VideoResolution_ck check (VideoResolution>=240),
+constraint Video_SongID_FK foreign key(SongID) references Apple_Song(SongID)
+);
+
+
+
+
+/*Associative Entities*/
+/*11-RadioUsers*/
+
+
+
+
+Create Table RadioUsers(
+RadioID char(4),
+UserAppleID char(8),
+primary key(RadioID, UserAppleID),
+constraint FKRadioID_Radio Foreign Key(RadioID)
+references Radio(RadioID),
+constraint FKUserAppleID Foreign Key(UserAppleID)
+references Users(UserAppleID)
+);
+
+
+
+
+/*12-ArtistSongs*/
+
+
+
+
+Create Table ArtistSongs(
+ArtistID char(8),
+SongID char(8),
+primary key(ArtistID, SongID),
+constraint FKArtistID_ArtSong Foreign Key(ArtistID)
+references Artist(ArtistID),
+constraint FKSongID_ArtSong Foreign Key(SongID)
+references Apple_Song(SongID)
+);
+
+
+
+
+/*13-SongUsers*/
+
+
+
+
+Create Table SongUsers(
+UserAppleID char(8),
+SongID char(8),
+primary key(UserAppleID, SongID),
+constraint FKUserAppleID_SongUsers Foreign Key(UserAppleID)
+references Users(UserAppleID),
+constraint FKSongID_SongUsers Foreign Key(SongID)
+references Apple_Song(SongID)
+);
+
+
+
+
+/*14-AppleSongGenre*/
+
+
+
+
+Create Table AppleSongGenre(
+GenreID char(8),
+SongID char(8),
+primary key(GenreID, SongID),
+constraint FKGenreID_AppleSongGenre Foreign Key(GenreID)
+references Genre(GenreID),
+constraint FKSongID_AppleSongGenre Foreign Key(SongID)
+references Apple_Song(SongID)
+);
+
+
+
+
+/*15-SongsInPlaylist*/
+
+
+
+
+create table SongsInPlaylist(
+PlaylistID char(8),
+SongID char(8),
+primary key (PlaylistID, SongID),
+constraint PlaylistID_SIPlaylist_FK Foreign Key(PlaylistID)
+references Apple_Playlist(PlaylistID),
+Constraint SongID_SIPlaylist_FK Foreign Key(SongID)
+references Apple_Song(SongID)
+);
+
+
+
+
+/*16-UsersPlaylist*/
+
+
+
+
+create table UsersPlaylist(
+PlaylistID char(8),
+UserAppleID char(8),
+primary key (PlaylistID, UserAppleID),
+constraint PlaylistID_UPlaylist_FK Foreign Key(PlaylistID)
+references Apple_Playlist(PlaylistID),
+Constraint UserAppleID_UPlaylist_FK Foreign Key(UserAppleID)
+references Users(UserAppleID)
+);
+
+
+
+
+/*I created a Sequence to allow for the creation of "Templates" (can very quickly and easily make more data entries) If you guys want to
+add more data entries quickly feel free to use the templates I have created! :)*/
+--Sequence
+create sequence ID_Generator
+start with 1
+increment by 1
+nocycle;
+
+
+
+
+--Utillites (Sequence Manipulation)
+
+
+
+
+--select trim(to_char(ID_Generator.nextval, '00000000')) from dual;
+--alter sequence ID_Generator
+--restart;
+
+
+
+
+--Data Entry
+
+
+
+
+--1-Individuals
+--Template
+
+
+
+
+/*
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),' ',' ',' ');
+*/
+
+
+
+
+--select * from Individuals;
+--Entries
+insert into Individuals (IndividualID, UserName, Password, Email)
+values (trim(to_char(ID_Generator.nextval, '00000000')), 'Mary420', 'NoWay1989', 'mhanek@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')), 'HarryStyles', 'AdoreYou23', 'HarryS@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'TaylorSwiftz','LongWithMe0','SwiftT@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'AMLee','ToLife03','AmLeeEV@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Eminem','SlimShadey11','MBruceEM@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'BillyJoel','ThePianoMan73','52BillyJoel@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'KyleDel','Catscratch123','dellocky132@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'TonyShez','EX231','TheTony521@gmail.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Martinezs','Muppit21','MarMan608@yahoo.com');
+
+
+
+
+insert into Individuals
+values (trim(to_char(ID_Generator.nextval, '00000000')),'SilentDe','WackyMan1','FunnyGuy63@yahoo.com');
+--To Reset the Generator
+alter sequence ID_Generator
+restart;
+
+
+
+
+--2-Genre
+--Template
+/*
+insert into Genre
+values (trim(to_char(ID_Generator.nextval, '0000')),' ');
+*/
+--Select * from Genre;
+--Entries
+Insert into Genre (GenreID, GenreName)
+values (trim(to_char(ID_Generator.nextval, '0000')), 'HipHop');
+
+
+
+
+Insert into Genre
+values (trim(to_char(ID_Generator.nextval, '0000')), 'Jazz');
+
+
+
+
+insert into Genre
+values (trim(to_char(ID_Generator.nextval, '0000')),'Pop');
+
+
+
+
+insert into Genre
+values (trim(to_char(ID_Generator.nextval, '0000')),'Rock');
+
+
+
+
+insert into Genre
+values (trim(to_char(ID_Generator.nextval, '0000')),'Country');
+
+
+
+
+alter sequence ID_Generator
+restart;
+
+
+
+
+--3-Apple_Playlist
+
+
+
+
+--Template
+/*
+insert into Apple_Playlist(PlaylistID, PlaylistName, PlaylistReleaseDate)
+values (trim(to_char(ID_Generator.nextval, '00000000')),' ', '');
+
+
+
+
+*/
+--Select * from Apple_Playlist;
+--Entries
+insert into Apple_Playlist(PlaylistID, PlaylistName, PlaylistReleaseDate)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Rock', '23-OCT-23');
+
+
+
+
+insert into Apple_Playlist(PlaylistID, PlaylistName, PlaylistReleaseDate)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'2000''s', '11-AUG-14');
+
+
+
+
+insert into Apple_Playlist(PlaylistID, PlaylistName, PlaylistReleaseDate)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Oldies', '15-APR-18');
+
+
+
+
+insert into Apple_Playlist(PlaylistID, PlaylistName, PlaylistReleaseDate)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Rap', '14-JUN-22');
+
+
+
+
+insert into Apple_Playlist(PlaylistID, PlaylistName, PlaylistReleaseDate)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Favorites', '09-FEB-20');
+
+
+
+
+insert into Apple_Playlist(PlaylistID, PlaylistName, PlaylistReleaseDate)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Relaxing Songs', '14-DEC-19');
+
+
+
+
+alter sequence ID_Generator
+restart;
+
+
+
+
+
+
+
+
+--4-Radio
+
+
+
+
+--Template
+/*
+insert into Radio(RadioID, RadioStationName, RadioStationFrequency)
+values (trim(to_char(ID_Generator.nextval, '0000')),' ‘, ‘ ');
+*/
+--Select * from Radio;
+--Entries
+insert into Radio
+values (trim(to_char(ID_Generator.nextval, '0000')),'Classic Hits Detroit', '94.7');
+
+
+
+
+insert into Radio
+values (trim(to_char(ID_Generator.nextval, '0000')),'Alternative Rock Detroit', '98.7');
+
+
+
+
+insert into Radio
+values (trim(to_char(ID_Generator.nextval, '0000')),'Cleveland Top Hits', '94.7');
+
+
+
+
+insert into Radio
+values (trim(to_char(ID_Generator.nextval, '0000')),'Detroit Hip Hop', '95.5');
+
+
+
+
+Insert into Radio
+values (trim(to_char(ID_Generator.nextval, '0000')),'Detroit Funk', '92.3');
+alter sequence ID_Generator
+restart;
+--5-Users
+
+
+
+
+--Template
+/*
+insert into users (UserAppleID)
+values (' ')
+*/
+--select * from individuals;
+--Select * from users;
+--Entries
+
+
+
+
+insert into users
+values ('00000001');
+
+
+
+
+insert into users
+values ('00000007');
+
+
+
+
+insert into users
+values ('00000008');
+
+
+
+
+insert into users
+values ('00000009');
+
+
+
+
+insert into users
+values ('00000010');
+
+
+
+
+--6-Artist
+
+
+
+
+--Template
+/*
+insert into Artist(ArtistID, ArtistFirstName, ArtistLastName, ArtistGenre, ReleaseDate)
+values (' ',' ',' ',' ',' ');
+*/
+--select * from individuals;
+--Select * from Artist;
+--Entries
+
+
+
+
+insert into Artist(ArtistID, ArtistFirstName, ArtistLastName, ArtistGenre, ReleaseDate)
+values ('00000002','Harry','Styles','Pop','20-May-2017');
+
+
+
+
+insert into Artist(ArtistID, ArtistFirstName, ArtistLastName, ArtistGenre, ReleaseDate)
+values ('00000003','Taylor','Swift','Pop','20-Sep-2006');
+
+
+
+
+insert into Artist(ArtistID, ArtistFirstName, ArtistLastName, ArtistGenre, ReleaseDate)
+values ('00000004','Amy','Lee','Rock','17-Nov-2003');
+
+
+
+
+insert into Artist(ArtistID, ArtistFirstName, ArtistLastName, ArtistGenre, ReleaseDate)
+values ('00000005','Bruce','Mathers','Rap','12-June-1996');
+
+
+
+
+insert into Artist(ArtistID, ArtistFirstName, ArtistLastName, ArtistGenre, ReleaseDate)
+values ('00000006','Billy','Joel','Rock','1-Nov-1971');
+
+
+
+
+--7-Albums
+--Template
+/*
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),' ',' ',' ',' ');
+*/
+
+
+
+
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Harry''s House','20-May-2022','No','00000002');
+
+
+
+
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Fearless','11-Nov-2008','Yes','00000003');
+
+
+
+
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Reputation','20-May-2019','No','00000002');
+
+
+
+
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'FineLine','19-AUG-2023','Yes','00000003');
+
+
+
+
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Fallen','14-Nov-2003','No','00000004');
+
+
+
+
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'Piano Man','9-Nov-1973','Yes','00000006');
+
+
+
+
+insert into Album(AlbumsID, AlbumName, AlbumReleaseDate,  TopAlbum, ArtistID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'The Slim Shady LP','23-Feb-1999','Yes','00000005');
+
+
+
+
+alter sequence ID_Generator
+restart;
+
+
+
+
+--8-Payments
+--Template
+/*
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),'',' ',' ',' ',' ',' ',' ');
+*/
+
+
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),35,'Credit','30 Day','0','5-Oct-22','1234-5555-3214-2012','00000001');
+
+
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),40,'Credit','30 Days','0','4-Aug-20','5641-2321-5436-3214','00000003');
+
+
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values(trim(to_char(ID_Generator.nextval, '00000000')),30,'Credit','30 Days ','0','15-Mar-19','4539-8657-8923-8951','00000004');
+
+
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),35,'Credit','30 Days','5','13-Apr-17',' 4556-6994-3257-5503','00000005');
+
+
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),40,'Debit','30 Days','0','12-May-18','4929-1343-0953-3849','00000006');
+
+
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),15,'Credit','15 Days','2','10-Feb-17','4556-5225-2714-4532','00000008');
+
+
+insert into Payments(PaymentID, PaymentAmount, PaymentType, PaymentTerm, LatePaymentFee, PaymentDate, Paymentinfo, IndividualID)
+values (trim(to_char(ID_Generator.nextval, '00000000')),20,'Debit','15 Days','0','5-Jan-20','4485-7446-5881-0485','00000009');
+
+
+alter sequence ID_Generator
+restart;
+--9-Apple_Song
+--Template
+/*
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),' ',' ',' ',' ');
+*/
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'3:20','My Name Is','No',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'5:20','Guilty Conscience','No',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'2:18',' ',' ',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'4:30',' ',' ',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'5:20',' ',' ',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'6:20',' ',' ',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'3:15',' ',' ',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'3:12',' ',' ',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'4:03',' ',' ',' ');
+
+
+insert into Apple_Song(SongID, SongDuration, SongName, TrendingSong, AlbumsID)
+values (trim(to_char(ID_Generator.nextval)),'2:35',' ',' ',' ');
+
+
+/*
+Insert into Radio(RadioID, RadioStationName, RadioStationFrequency, FavoritesID) values
+('92.3', 'Detroit', '1357', 'F123');
+
+
+
+
+Insert into Radio(RadioID, RadioStationName, RadioStationFrequency, FavoritesID) values
+('95.5', 'Dearborn', '2468', 'G321');
+
+
+
+
+Insert into Genre (GenreID, GenreName)
+values ('897', 'HipHop');
+
+
+
+
+Insert into Genre (GenreID, GenreName)
+values ('53465', 'Jazz');
+
+
+
+
+insert into Playlist (PlaylistID, PlaylistLength, PlaylistReleaseDate)
+values ('M22', '29', '23-OCT-23');
+
+
+
+
+insert into Playlist (PlaylistID, PlaylistLength, PlaylistReleaseDate)
+values ('GQ1', '39', '11-AUG-14');
+
+
+
+
+insert into Video (VideoID, VideoResolution, VideoDuration, VideoViews)
+values ('T13', '480', '0.35', '13');
+
+
+
+
+insert into Video (VideoID, VideoResolution, VideoDuration, VideoViews)
+values ('k0', '540', '0.8', '1023');
+
+
+
+
+insert into Song (SongID, SongDuration, SongName, VideoID, TrendingSong)
+values ('M45', '0.35', 'Lover', 'T13', '5');
+
+
+
+
+insert into Song (SongID, SongDuration, SongName, VideoID, TrendingSong)
+values ('H22', '0.8', 'Borderline', 'k0', '12');
+
+
+
+
+insert into Individuals (IndividualID, UserName, Password, Email, PaymentInfo)
+values ('Mary20', 'Mary420', 'NoWay1989', 'mhanek@gmail.com', '5665484188');
+
+
+
+
+insert into Individuals (IndividualID, UserName, Password, Email, PaymentInfo)
+values ('Harry', 'HarryStyles', 'AdoreYou23', 'HarryS@gmail.com', '177652289');
+
+
+
+
+insert into users (UserAppleID, UserListeningHistory, IndividualID)
+values ('MaryPerry20', 'Artic Monkeys 505', 'Mary20');
+
+
+
+
+insert into users (UserAppleID, UserListeningHistory, IndividualID)
+values ('HarryStyles23', 'Harry Style Kiwi', 'Harry');
+
+
+
+
+insert into payment values ('Pay125', 'Credit', '10 days', 'Paid for Oct', '0.0', '10-NOV-2023');
+
+
+
+
+insert into payment values ('Pay897', 'Credit', '29 days', 'Paid for Jan', '3.0', '10-FEB-2013');
+
+
+
+
+insert into album values('Taylor13', 'Reputation', '10-NOV-2017', '15', '#1', '1');
+
+
+
+
+insert into album values('HarrySty', 'Fine Line', '20-MAY-2019', '9', '#6', '3');
+
+
+
+
+insert into artist values ('Tay#1', 'Taylor Swift', 'Pop', 'Cruel Summer',
+'19-AUG-2023','45', 'Taylor13', 'Mary20');
+
+
+
+
+
+
+
+
+insert into artist values ('Harry', 'Harry Styles', 'Pop', 'As It Was',
+'20-May-2019', '29', 'HarrySty', 'Harry');
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
