@@ -1,0 +1,194 @@
+--1.
+select genrename, count(*) from genre natural join applesonggenre
+group by genrename;
+
+--2. 
+select max(song_duration) as "longest_duration"
+from apple_song;
+
+--3. 
+SELECT ArtistFirstName, ArtistLastName, COUNT(*) AS NumberOfSongs
+FROM Artist a
+INNER JOIN ArtistSongs ac
+ON a.ArtistID = ac.ArtistID
+GROUP BY ArtistFirstName, ArtistLastName
+ORDER BY NumberOfSongs DESC;
+
+--4.
+SELECT COUNT (*)
+FROM Individuals i
+WHERE NOT EXISTS (
+SELECT 1
+FROM Users u
+INNER JOIN UsersPlaylist up
+ON u.UserAppleID = up.UserAppleID
+Where u.UserAppleID = i.IndividualID);
+
+--5.
+SELECT v.VideoViews, s.SongName, a.ArtistFirstName, a.ArtistLastName
+FROM Video v
+INNER JOIN Apple_Song s
+ON v.SongID = s.SongID
+INNER JOIN ArtistSongs ac
+ON s.SongID = ac.SongID
+INNER JOIN Artist a
+ON ac.ArtistID = a.ArtistID
+ORDER BY v.VideoViews DESC;
+
+--6.
+SELECT ap.PlaylistName, ap.PlaylistReleaseDate, COUNT(*) AS NumberOfSongs
+FROM Apple_Playlist ap
+INNER JOIN SongsInPlaylist sp
+ON ap.PlaylistID = sp.PlaylistID
+GROUP BY ap.PlaylistName, ap.PlaylistReleaseDate;
+
+--7
+SELECT Individuals.UserName
+FROM Individuals
+INNER JOIN SongUsers ON Individuals.IndividualID = SongUsers.UserAppleID
+WHERE SongUsers.SongID = '00000004';
+
+--8.
+SELECT paymentid
+FROM Payment
+INNER JOIN Individuals ON Payment.IndividualID = Individuals.IndividualID
+WHERE Payment.LatePaymentFee > 0;
+
+--9.
+select i.UserName, p.PaymentInfo, p.PaymentDate
+from Individuals i
+inner join Payment p on i.IndividualID=p.IndividualID
+where p.PaymentDate < ADD_MONTHS(SYSDATE, -1);
+
+--10. 
+select upper(SongName) as UppercaseSongName
+from Apple_Song;
+
+--11.
+select individualid, email, paymenttype from 
+individuals natural join payment;
+
+--12. 
+select substr(artistfirstname, 1, 1) ||'.'|| artistlastname as "Short Name", albumname, topalbum, albumreleasedate from artist natural join album;
+
+--13.
+select radiostationname, count(*) as StationCount
+from Radio
+Group By radiostationname;
+
+--14.
+select i.individualid, i.username, nvl(p.paymentamount, 0) as paymentamount
+from individuals i
+left join payment p on i.individualid = p.individualid;
+
+--15.
+select v.videoid, v.videoviews, s.songname
+from video v
+join apple_song s on v.songid = s.songid
+group by v.videoid, v.videoviews, s.songname
+having v.videoviews = max(v.videoviews)
+fetch first row only;
+
+--16.
+Select a.artistid, a.artistfirstname, a.artistlastname, al.albumname, al.albumreleasedate
+From artist a
+Join album al on a.artistid = al.artistid
+Where al.albumreleasedate >= sysdate - interval  '2' year; 
+
+--17.
+Select s.songid, s.artistid, su.userappleid
+From artistsongs s
+Join songusers su on s.songid = su.songid
+Where s.songid in (select songid from artistsongs where artistid = '00000006');
+
+--18.
+Select albumsid, albumname, albumreleasedate
+From album
+Union
+Select playlistid, playlistname, playlistreleasedate
+From apple_playlist;
+
+--19.
+Select * from usersplaylist up
+Where exists (
+Select 1
+From songsinplaylist sp
+Where sp.playlistid = up.playlistid);
+
+--20.
+Select su.userappleid, sp.playlistid
+From songusers su
+Right join songsinplaylist sp on su.userappleid = sp.playlistid
+Where su.userappleid is not null;
+
+--21.
+Select radioid, radiostationfrequency
+From radio
+Order by radiostationfrequency desc;
+
+--22.
+Select artistfirstname, length(artistfirstname) as name_length from artist;
+
+--23.
+Select artistlastname, substr(artistlastname, 1,3) as initials from artist; 
+
+--24.
+Select paymentID,
+nvl(paymentType, 'not specified') as updatedpaymenttype,
+nvl2(paymenttype, 'Payment Type is specified', 'Payment Type is not specified') 
+As PaymentTypeStatus
+From payment;
+
+--25.
+Select playlistreleasedate, round(current_date - playlistreleasedate, 0) as DaysDifference
+From apple_playlist;
+
+--26.
+Select v.videoid, v.songid, Asong.Songname, v.videoresolution, SUM(v.videoviews) as totalviews from Video v
+Join apple_song asong on v.songid = asong.songid
+Group by v.videoid, v.songid, asong.songname, v.videoresolution; 
+
+--27.
+Select artistfirstname | | ' ' | | artistlastname as full_name, artistgenre, releasedate from artist;
+
+--28.
+Select songid
+From songsinplaylist
+Where playlistid = (select playlistID from apple_playlist where playlistname = 'BestRap')
+Intersect
+Select songid
+From songsinplaylist
+Where playlistid = (select playlistid from apple_playlist where playlistname = '2000''s');
+
+--29.
+Select * from artist where artistlastname like 'S%';
+
+--30.
+select playlistname, count(songid) Playlist_Length from songsinplaylist natural join apple_playlist 
+group by playlistName
+having count(songid)=(select max(count(songid)) from songsinplaylist group by playlistid);
+
+--31.
+select concat(concat(to_char(trunc((videodurationinsec-songdurationinsec)/60),'00'),':'),
+trim(to_char(mod((videodurationinsec-songdurationinsec), 60),'00')))Duration_Diffrence, songname from apple_song natural join video;
+
+--32. 
+select songname, nvl(videoid, 'No Video') Video_Number from apple_song left join video on (apple_song.songid=video.songid);
+
+--33. 
+select radiostationname, nvl2(radiostationfrequency,'Radio Broadcast','Digital Broadcast') as "BROADCAST TYPE" from radio;
+
+--34. 
+select  songname, sum(songuserplays) total_plays from songusers natural join apple_song 
+group by songname
+having sum(songuserplays) >=10
+order by total_plays desc; 
+
+--35. 
+select songname, trendingsong, albumname,
+artistfirstname||' '|| artistlastname artist_name from apple_song natural join album natural join artist;
+
+--36. 
+select artistfirstname||', '|| artistlastname artistname, albumname, trunc(months_between(albumreleasedate, releasedate)/12) years_between from album natural join artist;
+
+
